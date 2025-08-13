@@ -5,7 +5,7 @@ screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
 # Load car sprite
-car_image = pygame.image.load("nissan-skyline-gt-r.png").convert_alpha()
+car_image = pygame.image.load("RC-Racer/nissan-skyline-gt-r.png").convert_alpha()
 car = car_image
 car_x, car_y = 400, 300
 angle = 0
