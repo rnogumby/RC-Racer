@@ -1,15 +1,33 @@
-
-import pygame, math
+import pygame, math, random
 
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+info = pygame.display.Info()
+SCREEN_WIDTH, SCREEN_HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 # Load car sprite
+
+
+# ...existing code...
 car_image = pygame.image.load("RC-Racer/nissan-skyline-gt-r.png").convert_alpha()
-car = car_image
-car_x, car_y = 400, 300
-angle = 0
+# ...existing code...
+# Track parameters (scaled to screen)
+TRACK_CENTER = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+TRACK_RX = int(SCREEN_WIDTH * 0.35)
+TRACK_RY = int(SCREEN_HEIGHT * 0.3)
+TRACK_WIDTH = max(40, int(min(SCREEN_WIDTH, SCREEN_HEIGHT) * 0.08))
+START_LINE_X = TRACK_CENTER[0]
+START_LINE_Y1 = TRACK_CENTER[1] - TRACK_RY
+START_LINE_Y2 = TRACK_CENTER[1] + TRACK_RY
+
+# Scale car to fit track width
+CAR_SIZE = int(TRACK_WIDTH * 0.8)
+car = pygame.transform.smoothscale(car_image, (CAR_SIZE, CAR_SIZE))
+# Start car at the start/finish line, facing up the track
+car_x = START_LINE_X
+car_y = START_LINE_Y2 - CAR_SIZE // 2
+angle = 0  # 0 degrees = facing up
 speed = 0
 
 # Start screen
@@ -31,30 +49,26 @@ while show_start:
             show_start = False
 
 
-# Opponent car setup
-import random
-NUM_OPPONENTS = 3
-opponents = []
-for i in range(NUM_OPPONENTS):
-    opp_x = random.randint(100, 700)
-    opp_y = random.randint(100, 500)
-    opp_angle = random.randint(0, 360)
-    opp_speed = random.uniform(2, 4)
-    opponents.append({"x": opp_x, "y": opp_y, "angle": opp_angle, "speed": opp_speed})
-
-
-# Track parameters
-TRACK_CENTER = (400, 300)
-TRACK_RX = 280  # x radius
-TRACK_RY = 180  # y radius
-TRACK_WIDTH = 60
-START_LINE_X = 400
-START_LINE_Y1 = 300 - TRACK_RY
-START_LINE_Y2 = 300 + TRACK_RY
+# Track parameters (scaled to screen)
+TRACK_CENTER = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+TRACK_RX = int(SCREEN_WIDTH * 0.35)
+TRACK_RY = int(SCREEN_HEIGHT * 0.3)
+TRACK_WIDTH = max(40, int(min(SCREEN_WIDTH, SCREEN_HEIGHT) * 0.08))
+START_LINE_X = TRACK_CENTER[0]
+START_LINE_Y1 = TRACK_CENTER[1] - TRACK_RY
+START_LINE_Y2 = TRACK_CENTER[1] + TRACK_RY
 
 # Lap counting
 lap_count = 0
 passed_start = False
+NUM_OPPONENTS = 3
+opponents = []
+for i in range(NUM_OPPONENTS):
+    opp_x = random.randint(TRACK_CENTER[0] - TRACK_RX + TRACK_WIDTH, TRACK_CENTER[0] + TRACK_RX - TRACK_WIDTH)
+    opp_y = random.randint(TRACK_CENTER[1] - TRACK_RY + TRACK_WIDTH, TRACK_CENTER[1] + TRACK_RY - TRACK_WIDTH)
+    opp_angle = random.randint(0, 360)
+    opp_speed = random.uniform(2, 4)
+    opponents.append({"x": opp_x, "y": opp_y, "angle": opp_angle, "speed": opp_speed})
 
 def inside_track(x, y):
     dx = x - TRACK_CENTER[0]
@@ -69,6 +83,9 @@ while running:
             running = False
 
     keys = pygame.key.get_pressed()
+
+
+    # Car controls: UP/DOWN for forward/backward, LEFT/RIGHT for turning
     if keys[pygame.K_UP]:
         speed += 0.2
     if keys[pygame.K_DOWN]:
@@ -80,9 +97,10 @@ while running:
 
     speed *= 0.95  # friction
 
-    # Predict next position
-    next_x = car_x + math.sin(math.radians(angle)) * speed
-    next_y = car_y + math.cos(math.radians(angle)) * speed
+    # Move car in direction it is facing (0 degrees = up)
+    rad = math.radians(angle)
+    next_x = car_x + math.sin(rad) * speed
+    next_y = car_y - math.cos(rad) * speed
     if inside_track(next_x, next_y):
         car_x, car_y = next_x, next_y
     else:
@@ -107,10 +125,11 @@ while running:
         if random.random() < 0.02:
             opp["angle"] += random.choice([-5, 5])
 
-    screen.fill((30, 30, 30))
+
+    screen.fill((20, 80, 20))  # green background for grass
     # Draw track (outer and inner ovals)
-    pygame.draw.ellipse(screen, (60, 60, 60), (TRACK_CENTER[0]-TRACK_RX, TRACK_CENTER[1]-TRACK_RY, TRACK_RX*2, TRACK_RY*2), 0)
-    pygame.draw.ellipse(screen, (30, 30, 30), (TRACK_CENTER[0]-(TRACK_RX-TRACK_WIDTH), TRACK_CENTER[1]-(TRACK_RY-TRACK_WIDTH), (TRACK_RX-TRACK_WIDTH)*2, (TRACK_RY-TRACK_WIDTH)*2), 0)
+    pygame.draw.ellipse(screen, (120, 120, 120), (TRACK_CENTER[0]-TRACK_RX, TRACK_CENTER[1]-TRACK_RY, TRACK_RX*2, TRACK_RY*2), 0)
+    pygame.draw.ellipse(screen, (20, 80, 20), (TRACK_CENTER[0]-(TRACK_RX-TRACK_WIDTH), TRACK_CENTER[1]-(TRACK_RY-TRACK_WIDTH), (TRACK_RX-TRACK_WIDTH)*2, (TRACK_RY-TRACK_WIDTH)*2), 0)
     # Draw start/finish line
     pygame.draw.line(screen, (255,255,255), (START_LINE_X, START_LINE_Y1), (START_LINE_X, START_LINE_Y2), 4)
     # Draw opponents
